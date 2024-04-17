@@ -1,0 +1,6 @@
+*_output*
+*build*
+.idea
+
+pool
+main.cpp
