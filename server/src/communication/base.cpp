@@ -1,64 +1,52 @@
 #include "base.h"
+#include "socket_handler.h"
 
 #include <thread>
-#include <unistd.h>
 #include <cstring>
-#include <unordered_set>
 #include <vector>
 
-#define DEFAULT_PORT 2772
-#define BUFFER_SIZE 32768
+namespace srv {
+    int32_t create_and_open_socket(uint16_t port);
+}
 
-struct accepted_client {
-    int32_t socket_fd;
-    sockaddr_in address;
+int32_t srv::routine() {
+    srv::Commands commands{};
 
-    bool operator==(const accepted_client &other) const {
-        return socket_fd == other.socket_fd &&
-               address.sin_addr.s_addr == other.address.sin_addr.s_addr &&
-               address.sin_port == other.address.sin_port &&
-               address.sin_family == other.address.sin_family;
-    };
+    int32_t main_loop_socket_d = create_and_open_socket(DEFAULT_PORT);
 
-    std::size_t operator()(const accepted_client &client) const noexcept {
-        return std::hash<int32_t>()(client.socket_fd) ^ std::hash<uint32_t>()(client.address.sin_addr.s_addr);
-    }
-};
+    std::vector<std::thread> thread_handlers{};
 
-template<>
-struct std::hash<accepted_client> {
-    std::size_t operator()(const accepted_client &client) const noexcept {
-        return client(client);
-    }
-};
+    SocketHandler s_handler{};
 
-class SocketHandler {
-public:
+    std::cout << "server :: Ready to receive connections\n";
 
-    SocketHandler() = default;
+    bool stop_flag = false;
+    std::thread terminal_thread([&]() {
+        std::string terminal_input;
+        std::getline(std::cin, terminal_input);
 
-    ~SocketHandler() {
-        for (auto &client: connected_clients) {
-            close(client.socket_fd);
+        if (strcmp(terminal_input.c_str(), commands.stop_server) == 0) {
+            stop_flag = true;
         }
+
+        terminal_input.clear();
+    });
+
+    while (!stop_flag) {
+        auto thread = s_handler.accept_connection(main_loop_socket_d);
+
+        std::cout << "server :: Successfully accepted connection\n";
+
+        thread_handlers.push_back(std::move(thread));
     }
 
-private:
-    void set_receive_timeout(int32_t s_fd, uint32_t secs);
+    for (auto &t: thread_handlers) {
+        t.join();
+    }
 
-    void remove_receive_timeout(int32_t s_fd);
-
-public:
-
-    std::thread accept_connection(const int32_t &socket_handler);
-
-    void handle_request(std::thread *self, accepted_client client);
-
-private:
-    struct timeval tv{};
-
-    std::unordered_set<accepted_client> connected_clients{};
-};
+    close(main_loop_socket_d);
+    return 0;
+}
 
 int32_t srv::create_and_open_socket(uint16_t port) {
     sockaddr_in server{};
@@ -85,84 +73,4 @@ int32_t srv::create_and_open_socket(uint16_t port) {
     listen(socket_descriptor, 5);
 
     return socket_descriptor;
-}
-
-int32_t srv::routine() {
-    int32_t main_loop_socket_d = create_and_open_socket(DEFAULT_PORT);
-
-    std::vector<std::thread> thread_handlers{};
-
-    SocketHandler s_handler{};
-
-    std::cout << "server :: Ready to receive connections\n";
-
-    while (true) {
-        auto thread = s_handler.accept_connection(main_loop_socket_d);
-
-        std::cout << "server :: Successfully accepted connection\n";
-
-        thread_handlers.push_back(std::move(thread));
-    }
-
-    for (auto &t: thread_handlers) {
-        t.join();
-    }
-
-    close(main_loop_socket_d);
-}
-
-std::thread SocketHandler::accept_connection(const int32_t &socket_handler) {
-    accepted_client accepted{};
-
-    uint32_t client_len = sizeof(accepted.address);
-    accepted.socket_fd = accept(socket_handler, reinterpret_cast<sockaddr *>(&accepted.address), &client_len);
-
-    if (accepted.socket_fd == -1) {
-        close(socket_handler);
-        throw_error_and_halt("server :: Failed to accept socket connection");
-    }
-
-    this->connected_clients.insert(accepted);
-
-    std::thread t(&SocketHandler::handle_request, this, &t, accepted);
-    return t;
-}
-
-void SocketHandler::handle_request(std::thread *self, accepted_client client) {
-    uint32_t msg_pos = 0;
-    size_t rcode;
-    char buffer[BUFFER_SIZE];
-    std::memset(buffer, 0, sizeof buffer);
-
-    start_message(buffer, msg_pos, BUFFER_SIZE, "ready");
-    send(client.socket_fd, buffer, msg_pos + 1, 0);
-
-    set_receive_timeout(client.socket_fd, 10);
-    rcode = recv(client.socket_fd, buffer, sizeof(uint32_t), 0);
-
-    if (rcode != 0) {
-        if (errno == EAGAIN || errno == EWOULDBLOCK) {
-            std::cout << "server :: Failed to receive message during 10 seconds\n";
-            close(client.socket_fd);
-            return;
-        }
-    }
-
-    remove_receive_timeout(client.socket_fd);
-
-
-}
-
-void SocketHandler::set_receive_timeout(int32_t s_fd, uint32_t secs) {
-    tv.tv_sec = secs;
-    tv.tv_usec = 0;
-
-    setsockopt(s_fd, SOL_SOCKET, SO_RCVTIMEO, (const char *) &tv, sizeof tv);
-}
-
-void SocketHandler::remove_receive_timeout(int32_t s_fd) {
-    tv.tv_sec = 0;
-    tv.tv_usec = 0;
-
-    setsockopt(s_fd, SOL_SOCKET, SO_RCVTIMEO, (const char *) &tv, sizeof tv);
 }

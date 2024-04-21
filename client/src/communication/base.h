@@ -1,5 +1,5 @@
-#ifndef CLIENT_BASE_H
-#define CLIENT_BASE_H
+#ifndef LAB4_CLIENT_BASE_H
+#define LAB4_CLIENT_BASE_H
 
 #include "../../../resources.h"
 
@@ -11,4 +11,4 @@ namespace clt {
     int32_t create_and_open_socket(uint16_t port, const char *server_addr);
 }
 
-#endif //CLIENT_BASE_H
+#endif //LAB4_CLIENT_BASE_H
