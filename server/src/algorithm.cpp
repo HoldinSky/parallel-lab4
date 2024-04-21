@@ -6,7 +6,7 @@
 static std::random_device seed;
 
 void Algorithm::fill_matrix(
-        std::unique_ptr<std::unique_ptr<uint32_t[]>[]> &matrix,
+        uint32_t **matrix,
         uint32_t matrix_size,
         uint32_t max_value
 ) {
@@ -18,7 +18,7 @@ void Algorithm::fill_matrix(
     uint32_t progress_tracker = 0;
     const size_t one_hundreds = matrix_size / 100;
 
-    for (size_t i = 0; i < matrix_size; i++) {
+    for (size_t i = 0; i < matrix_size; i++, progress_tracker++) {
         if (progress_tracker > one_hundreds) {
             {
                 lock_guard _(this->progress_mutex);
@@ -40,7 +40,7 @@ void Algorithm::fill_matrix(
 }
 
 
-int Algorithm::run(std::unique_ptr<std::unique_ptr<uint32_t[]>[]> &matrix, uint32_t matrix_size, uint32_t max_value) {
+int Algorithm::run(uint32_t **matrix, uint32_t matrix_size, uint32_t max_value) {
     percent_done = 0;
 
     fill_matrix(matrix, matrix_size, max_value);

@@ -6,17 +6,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 
-#define DEFAULT_PORT 2772
-#define BUFFER_SIZE 32768
-
 namespace srv {
-    struct Commands {
-        const char* const get_progress = "smp";
-        const uint32_t get_progress_len = strlen(get_progress) + 1;
-
-        const char* const stop_server = "stop";
-    };
-
     int32_t routine();
 }
 

@@ -6,7 +6,33 @@
 #include <chrono>
 #include <cstring>
 
-void throw_error_and_halt(const char *msg);
+#define DEFAULT_PORT 2772
+#define BUFFER_SIZE 32768
+
+constexpr uint32_t str_length(const char *const str) {
+    uint32_t len = 0;
+
+    for (; str[len] != '\0'; len++);
+
+    return len + 1;
+}
+
+struct Commands {
+    static constexpr const char *const get_progress = "smp";    // send me progress
+    static constexpr uint32_t get_progress_len = str_length(get_progress);
+
+    static constexpr const char *const stop_server = "stop";
+    static constexpr uint32_t stop_server_len = str_length(stop_server);
+
+    static constexpr const char *const server_ready = "ready";
+    static constexpr uint32_t server_ready_len = str_length(server_ready);
+};
+
+void print_error(const char* msg);
+
+void print_error_and_halt(const char *msg);
+
+bool safe_send(int32_t socket_fd, const void *buf, size_t n, int flags);
 
 void populate_message_with_bytes(
         char *buf,
@@ -39,7 +65,7 @@ void append_to_message(char *buf, uint32_t &current_size, uint32_t max_size, con
 
 /// rewrites passed message 'data' at the beginning of 'buf'.
 /// 'current_size' becomes the size of 'data' excluding '\0'
-void start_message(char *buf, uint32_t &current_size, uint32_t max_size, const char * data);
+void start_message(char *buf, uint32_t &current_size, uint32_t max_size, const char *data);
 
 /// update 'current_position' as it goes through message to get bytes
 template<typename T>
@@ -50,14 +76,6 @@ T parse_message(char *msg, uint32_t &current_position) {
     return *data;
 }
 
-template<typename FT>
-std::chrono::duration<int64_t, std::milli>
-measure_execution_time(FT func) {
-    auto start = std::chrono::high_resolution_clock::now();
-    func();
-    auto end = std::chrono::high_resolution_clock::now();
-
-    return std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-}
+void free_matrix(uint32_t **matrix, uint32_t size);
 
 #endif //LAB4_RESOURCES_H

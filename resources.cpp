@@ -1,7 +1,13 @@
 #include "resources.h"
 
-void throw_error_and_halt(const char *const msg) {
-    std::cerr << msg << std::endl;
+#include <sys/socket.h>
+
+void print_error(const char* const msg) {
+    fprintf(stderr, "%s", msg);
+}
+
+void print_error_and_halt(const char *const msg) {
+    print_error(msg);
     exit(-1);
 }
 
@@ -34,4 +40,35 @@ void append_to_message(char *buf, uint32_t &current_size, const uint32_t max_siz
 void start_message(char* buf, uint32_t &current_size, const uint32_t max_size, const char* const data) {
     current_size = 0;
     append_to_message(buf, current_size, max_size, data);
+}
+
+bool safe_send(int32_t socket_fd, const void *buf, size_t n, int flags) {
+    int error = 0;
+    socklen_t len = sizeof(error);
+    int retval = getsockopt(socket_fd, SOL_SOCKET, SO_ERROR, &error, &len);
+
+    char err_buf[100];
+    if (retval != 0) {
+        sprintf(err_buf, "server :: Error getting socket error code: %s\n", strerror(retval));
+        print_error(err_buf);
+        return false;
+    }
+
+    if (error != 0) {
+        sprintf(err_buf, "server :: Socket error: %s\n", strerror(error));
+        print_error(err_buf);
+        return false;
+    }
+
+    send(socket_fd, buf, n, flags);
+
+    return true;
+}
+
+void free_matrix(uint32_t **matrix, uint32_t size) {
+    for (size_t i = 0; i < size; i++) {
+        delete[] matrix[i];
+    }
+
+    delete[] matrix;
 }

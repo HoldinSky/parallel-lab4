@@ -1,8 +1,9 @@
 #include "base.h"
 #include "socket_handler.h"
 
-#include <thread>
+#include <unistd.h>
 #include <cstring>
+#include <thread>
 #include <vector>
 
 namespace srv {
@@ -10,11 +11,9 @@ namespace srv {
 }
 
 int32_t srv::routine() {
-    srv::Commands commands{};
-
     int32_t main_loop_socket_d = create_and_open_socket(DEFAULT_PORT);
 
-    std::vector<std::thread> thread_handlers{};
+    std::vector<std::thread> client_thread_handlers{};
 
     SocketHandler s_handler{};
 
@@ -25,7 +24,7 @@ int32_t srv::routine() {
         std::string terminal_input;
         std::getline(std::cin, terminal_input);
 
-        if (strcmp(terminal_input.c_str(), commands.stop_server) == 0) {
+        if (strcmp(terminal_input.c_str(), Commands::stop_server) == 0) {
             stop_flag = true;
         }
 
@@ -35,12 +34,10 @@ int32_t srv::routine() {
     while (!stop_flag) {
         auto thread = s_handler.accept_connection(main_loop_socket_d);
 
-        std::cout << "server :: Successfully accepted connection\n";
-
-        thread_handlers.push_back(std::move(thread));
+        client_thread_handlers.push_back(std::move(thread));
     }
 
-    for (auto &t: thread_handlers) {
+    for (auto &t: client_thread_handlers) {
         t.join();
     }
 
@@ -61,13 +58,13 @@ int32_t srv::create_and_open_socket(uint16_t port) {
     socket_descriptor = socket(AF_INET, SOCK_STREAM, 0);
     if (socket_descriptor < 0) {
         close(socket_descriptor);
-        throw_error_and_halt("server :: Failed to create socket");
+        print_error_and_halt("server :: Failed to create socket");
     }
 
     return_code = bind(socket_descriptor, reinterpret_cast<sockaddr *>(&server), sizeof(server));
-    if (return_code != 0) {
+    if (return_code == -1) {
         close(socket_descriptor);
-        throw_error_and_halt("server :: Failed to bind socket");
+        print_error_and_halt("server :: Failed to bind socket");
     }
 
     listen(socket_descriptor, 5);

@@ -19,12 +19,12 @@ private:
         if (this->percent_done >= 99) this->percent_done = 100;
     }
 
-    void fill_matrix(std::unique_ptr<std::unique_ptr<uint32_t[]>[]> &matrix, uint32_t matrix_size, uint32_t max_value);
+    void fill_matrix(uint32_t **matrix, uint32_t matrix_size, uint32_t max_value);
 
 public:
     Algorithm() = default;
 
-    int run(std::unique_ptr<std::unique_ptr<uint32_t[]>[]> &matrix, uint32_t matrix_size, uint32_t max_value);
+    int run(uint32_t **matrix, uint32_t matrix_size, uint32_t max_value);
 
     uint32_t get_percentage() {
         lock_guard _(this->progress_mutex);

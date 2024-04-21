@@ -7,8 +7,7 @@
 #include <arpa/inet.h>
 
 namespace clt {
-    /// return descriptor of successfully initialized socket
-    int32_t create_and_open_socket(uint16_t port, const char *server_addr);
+    void single_client_with_ui();
 }
 
 #endif //LAB4_CLIENT_BASE_H
