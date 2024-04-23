@@ -5,10 +5,7 @@
 
 #include <sys/socket.h>
 #include <arpa/inet.h>
-
-namespace srv {
-    int32_t routine();
-}
+#include <thread>
 
 struct accepted_client {
     int32_t socket_fd;
@@ -32,5 +29,13 @@ struct std::hash<accepted_client> {
         return client(client);
     }
 };
+
+namespace srv {
+    int32_t routine();
+
+    std::pair<accepted_client, std::thread> accept_connection(const int32_t &socket_handler);
+
+    int32_t handle_request(accepted_client client);
+}
 
 #endif //LAB4_SERVER_BASE_H

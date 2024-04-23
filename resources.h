@@ -5,9 +5,13 @@
 #include <iostream>
 #include <chrono>
 #include <cstring>
+#include <mutex>
 
 #define DEFAULT_PORT 2772
 #define BUFFER_SIZE 32768
+#define SERVER_ADDR "127.0.0.1"
+
+using lock_guard = std::unique_lock<std::mutex>;
 
 constexpr uint32_t str_length(const char *const str) {
     uint32_t len = 0;
@@ -21,11 +25,26 @@ struct Commands {
     static constexpr const char *const get_progress = "smp";    // send me progress
     static constexpr uint32_t get_progress_len = str_length(get_progress);
 
-    static constexpr const char *const stop_server = "stop";
+    static constexpr const char *const stop_server = "stop";    // stop the server (from terminal)
     static constexpr uint32_t stop_server_len = str_length(stop_server);
 
-    static constexpr const char *const server_ready = "ready";
-    static constexpr uint32_t server_ready_len = str_length(server_ready);
+    static constexpr const char *const ready_receive_data = "rtr";  // ready to receive [data]
+    static constexpr uint32_t ready_receive_data_len = str_length(ready_receive_data);
+
+    static constexpr const char *const start_task = "stt";     // start the task
+    static constexpr uint32_t start_task_len = str_length(start_task);
+
+    static constexpr const char *const result_ready = "rar";    // results are ready
+    static constexpr uint32_t result_ready_len = str_length(result_ready);
+
+    static constexpr const char *const get_results = "smr";    // send me results
+    static constexpr uint32_t get_results_len = str_length(get_results);
+
+    static constexpr const char *const emergency_exit = "emergency";
+    static constexpr uint32_t emergency_exit_len = str_length(emergency_exit);
+
+    static constexpr const char *const data_received = "rok";   // received - ok
+    static constexpr uint32_t data_received_len = str_length(data_received);
 };
 
 void print_error(const char* msg);
@@ -77,5 +96,9 @@ T parse_message(char *msg, uint32_t &current_position) {
 }
 
 void free_matrix(uint32_t **matrix, uint32_t size);
+
+void set_timeout(int32_t s_fd, int32_t timeout_type, uint32_t secs, uint32_t usec = 0);
+
+void remove_timeout(int32_t s_fd, int32_t timeout_type);
 
 #endif //LAB4_RESOURCES_H

@@ -13,10 +13,8 @@ link_directories(./**)
 add_executable(server src/main.cpp
         src/algorithm.h
         src/algorithm.cpp
-        src/communication/base.h
-        src/communication/base.cpp
-        src/communication/socket_handler.h
-        src/communication/socket_handler.cpp
+        src/communication/server.h
+        src/communication/server.cpp
         ../resources.h
         ../resources.cpp
 )

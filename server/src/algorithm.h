@@ -5,8 +5,7 @@
 #include <mutex>
 #include <atomic>
 #include <memory>
-
-using lock_guard = std::unique_lock<std::mutex>;
+#include "../../resources.h"
 
 class Algorithm {
 private:

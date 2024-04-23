@@ -8,6 +8,6 @@ link_directories(./**)
 add_executable(client src/main.cpp
         ../resources.h
         ../resources.cpp
-        src/communication/base.h
-        src/communication/base.cpp
+        src/communication/client.h
+        src/communication/client.cpp
 )
